@@ -1,15 +1,17 @@
 import { useStore } from '../store/subtitleStore';
 import { SubtitleEntryRow } from './SubtitleEntry';
+import { useTranslation } from '../i18n';
 
 export function SubtitleEditor() {
   const subtitles = useStore((s) => s.subtitles);
+  const { t } = useTranslation();
 
   if (!subtitles.length) {
     return (
       <div className="flex flex-1 items-center justify-center text-gray-500">
         <div className="text-center">
-          <p className="text-lg">No subtitles loaded</p>
-          <p className="text-sm">Import an SRT file or start adding entries</p>
+          <p className="text-lg">{t('editor.empty.title')}</p>
+          <p className="text-sm">{t('editor.empty.description')}</p>
         </div>
       </div>
     );

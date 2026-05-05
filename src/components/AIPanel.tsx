@@ -5,9 +5,11 @@ import { useStore } from '../store/subtitleStore';
 import { translateWithAI, testAIConnection } from '../lib/ai-client';
 import type { Language, AIProvider } from '../types';
 import { LANGUAGE_MAP } from '../types';
+import { useTranslation } from '../i18n';
 
 interface Preset {
   label: string;
+  labelKey: string;
   provider: AIProvider;
   url: string;
   key: string;
@@ -15,11 +17,11 @@ interface Preset {
 }
 
 const PRESETS: Preset[] = [
-  { label: 'Ollama (Local)', provider: 'openai', url: 'http://localhost:11434', key: '', model: 'llama3' },
-  { label: 'OpenAI', provider: 'openai', url: 'https://api.openai.com', key: 'sk-...', model: 'gpt-4' },
-  { label: 'LM Studio', provider: 'lmstudio', url: 'http://localhost:1234', key: '', model: 'qwen/qwen3.5-9b' },
-  { label: 'Gemini', provider: 'gemini', url: 'https://generativelanguage.googleapis.com', key: '...', model: 'gemini-flash-latest' },
-  { label: 'Claude', provider: 'claude', url: 'https://api.anthropic.com', key: '...', model: 'claude-sonnet-4-6' },
+  { label: 'Ollama (Local)', labelKey: 'ai.preset.ollama', provider: 'openai', url: 'http://localhost:11434', key: '', model: 'llama3' },
+  { label: 'OpenAI', labelKey: 'ai.preset.openai', provider: 'openai', url: 'https://api.openai.com', key: 'sk-...', model: 'gpt-4' },
+  { label: 'LM Studio', labelKey: 'ai.preset.lmstudio', provider: 'lmstudio', url: 'http://localhost:1234', key: '', model: 'qwen/qwen3.5-9b' },
+  { label: 'Gemini', labelKey: 'ai.preset.gemini', provider: 'gemini', url: 'https://generativelanguage.googleapis.com', key: '...', model: 'gemini-flash-latest' },
+  { label: 'Claude', labelKey: 'ai.preset.claude', provider: 'claude', url: 'https://api.anthropic.com', key: '...', model: 'claude-sonnet-4-6' },
 ];
 
 export function AIPanel() {
@@ -27,6 +29,7 @@ export function AIPanel() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<boolean | null>(null);
   const { aiConfig, setAIConfig, isTranslating, setIsTranslating, subtitles, selectedLanguage, setSelectedLanguage, setOriginalSubtitles, setShowDiff } = useStore();
+  const { t } = useTranslation();
 
   const [localConfig, setLocalConfig] = useState(aiConfig);
 
@@ -71,12 +74,15 @@ export function AIPanel() {
   };
 
   const isFixedUrl = localConfig.provider === 'gemini' || localConfig.provider === 'claude';
+  const apiKeyHint = localConfig.provider === 'gemini' || localConfig.provider === 'claude' || localConfig.provider === 'openai'
+    ? t('ai.config.apiKeyHint.cloud')
+    : t('ai.config.apiKeyHint.local');
 
   if (!open) {
     return (
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border-custom bg-surface/50">
         <Button variant="outline" onClick={() => setOpen(true)}>
-          <Settings size={16} /> AI Settings
+          <Settings size={16} /> {t('ai.settings')}
         </Button>
         <select
           value={selectedLanguage}
@@ -89,7 +95,7 @@ export function AIPanel() {
         </select>
         <Button onClick={handleTranslate} disabled={isTranslating || !subtitles.length}>
           {isTranslating ? <Loader2 size={16} className="animate-spin" /> : <Languages size={16} />}
-          Translate
+          {t('ai.translate')}
         </Button>
       </div>
     );
@@ -98,20 +104,20 @@ export function AIPanel() {
   return (
     <div className="border-b border-border-custom bg-surface px-4 py-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold">AI Provider Configuration</h3>
-        <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>Close</Button>
+        <h3 className="font-semibold">{t('ai.config.title')}</h3>
+        <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>{t('ai.config.close')}</Button>
       </div>
       <div className="grid gap-3 max-w-lg">
         <div>
-          <label className="block text-xs text-gray-400 mb-1">Provider</label>
+          <label className="block text-xs text-gray-400 mb-1">{t('ai.config.provider')}</label>
           <div className="flex gap-2 flex-wrap">
             {(
               [
-                { value: 'openai', label: 'OpenAI Compatible' },
-                { value: 'lmstudio', label: 'LM Studio' },
-                { value: 'gemini', label: 'Gemini' },
-                { value: 'claude', label: 'Claude' },
-              ] as { value: AIProvider; label: string }[]
+                { value: 'openai', labelKey: 'ai.provider.openai' },
+                { value: 'lmstudio', labelKey: 'ai.provider.lmstudio' },
+                { value: 'gemini', labelKey: 'ai.provider.gemini' },
+                { value: 'claude', labelKey: 'ai.provider.claude' },
+              ] as { value: AIProvider; labelKey: string }[]
             ).map((p) => (
               <button
                 key={p.value}
@@ -131,14 +137,14 @@ export function AIPanel() {
                     : 'border-border-custom hover:bg-surface-hover'
                 }`}
               >
-                {p.label}
+                {t(p.labelKey)}
               </button>
             ))}
           </div>
         </div>
         {!isFixedUrl && (
           <div>
-            <label className="block text-xs text-gray-400 mb-1">API Base URL</label>
+            <label className="block text-xs text-gray-400 mb-1">{t('ai.config.apiUrl')}</label>
             <input
               type="text"
               value={localConfig.apiUrl}
@@ -146,58 +152,56 @@ export function AIPanel() {
               className="w-full rounded border border-border-custom bg-transparent px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
               placeholder="http://localhost:11434"
             />
-            <p className="text-xs text-gray-500 mt-1">For local LLMs like Ollama use: http://localhost:11434</p>
+            <p className="text-xs text-gray-500 mt-1">{t('ai.config.apiUrlHint')}</p>
           </div>
         )}
         {isFixedUrl && (
           <div className="p-2 rounded bg-surface-hover border border-border-custom">
             <p className="text-xs text-gray-400">
-              Endpoint: <span className="text-gray-300 font-mono">{localConfig.apiUrl}</span>
+              {t('ai.config.endpoint')} <span className="text-gray-300 font-mono">{localConfig.apiUrl}</span>
             </p>
           </div>
         )}
         <div>
-          <label className="block text-xs text-gray-400 mb-1">API Key</label>
+          <label className="block text-xs text-gray-400 mb-1">{t('ai.config.apiKey')}</label>
           <input
             type="password"
             value={localConfig.apiKey}
             onChange={(e) => setLocalConfig({ ...localConfig, apiKey: e.target.value })}
             className="w-full rounded border border-border-custom bg-transparent px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
-            placeholder="your-api-key"
+            placeholder={t('ai.config.apiKeyPlaceholder')}
           />
-          <p className="text-xs text-gray-500 mt-1">
-            {localConfig.provider === 'openai' ? 'Leave empty for local providers' : 'Get your key from the provider console'}
-          </p>
+          <p className="text-xs text-gray-500 mt-1">{apiKeyHint}</p>
         </div>
         <div>
-          <label className="block text-xs text-gray-400 mb-1">Model Name</label>
+          <label className="block text-xs text-gray-400 mb-1">{t('ai.config.model')}</label>
           <input
             type="text"
             value={localConfig.model}
             onChange={(e) => setLocalConfig({ ...localConfig, model: e.target.value })}
             className="w-full rounded border border-border-custom bg-transparent px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
-            placeholder="llama3, gpt-4, gemini-2.0-flash, claude-sonnet-4-6"
+            placeholder={t('ai.config.modelPlaceholder')}
           />
         </div>
         <div className="flex gap-2 items-center">
-          <Button onClick={handleSave}>Save Config</Button>
+          <Button onClick={handleSave}>{t('ai.config.save')}</Button>
           <Button variant="outline" onClick={handleTest} disabled={testing}>
-            {testing ? <Loader2 size={14} className="animate-spin" /> : testResult === true ? <Check size={14} className="text-green-400" /> : testResult === false ? <X size={14} className="text-red-400" /> : 'Test Connection'}
+            {testing ? <Loader2 size={14} className="animate-spin" /> : testResult === true ? <Check size={14} className="text-green-400" /> : testResult === false ? <X size={14} className="text-red-400" /> : t('ai.config.test')}
           </Button>
         </div>
         {testResult !== null && (
           <p className={`text-sm ${testResult ? 'text-green-400' : 'text-red-400'}`}>
-            {testResult ? 'Connection successful!' : 'Connection failed. Check your settings.'}
+            {testResult ? t('ai.config.testSuccess') : t('ai.config.testFailed')}
           </p>
         )}
         <div className="mt-2 p-3 rounded bg-surface-hover border border-border-custom">
           <p className="text-xs text-gray-400">
-            <strong>Quick Presets:</strong>
+            <strong>{t('ai.config.presets')}</strong>
           </p>
           <div className="flex gap-2 mt-1 flex-wrap">
             {PRESETS.map((preset) => (
               <button
-                key={preset.label}
+                key={preset.labelKey}
                 type="button"
                 onClick={() => setLocalConfig({
                   provider: preset.provider,
@@ -207,7 +211,7 @@ export function AIPanel() {
                 })}
                 className="text-xs px-2 py-1 rounded border border-border-custom hover:bg-surface-hover transition-colors"
               >
-                {preset.label}
+                {t(preset.labelKey)}
               </button>
             ))}
           </div>

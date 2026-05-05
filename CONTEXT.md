@@ -35,7 +35,13 @@
 ```
 src/
   types/index.ts          → Type definitions: SubtitleEntry, AIConfig, AIProvider, Language, LANGUAGE_MAP
-  store/subtitleStore.ts  → Zustand store: subtitles, AI config, projects, all actions
+  i18n/
+    index.ts              → Custom i18n: useTranslation() hook, t() function, browser detection, locale persistence
+    locales/
+      en.json             → English translations
+      pt.json             → Brazilian Portuguese translations
+      es.json             → Spanish translations
+  store/subtitleStore.ts  → Zustand store: subtitles, AI config, projects, locale, all actions
   lib/
     srt-parser.ts         → parseSRT(content: string): SubtitleEntry[], serializeSRT(entries): string
     db.ts                 → IndexedDB CRUD: saveProject, loadProject, deleteProject, listProjects, generateProjectName
@@ -45,7 +51,7 @@ src/
     App.tsx               → Root: renders <Layout />
     main.tsx              → Entry point: createRoot + <StrictMode><App /></StrictMode>
     index.css             → Tailwind imports + base styles (dark bg #121218, font system-ui)
-    Layout.tsx            → Main layout: header (ProjectDropdown, Toolbar, AIPanel) + main (SubtitleEditor | DiffViewer)
+    Layout.tsx            → Main layout: header (ProjectDropdown, Toolbar, AIPanel, locale selector) + main (SubtitleEditor | DiffViewer)
     Toolbar.tsx           → Import/Export SRT, Add Entry, Show/Hide Diff toggle
     SubtitleEditor.tsx    → Scrollable list of SubtitleEntryRow components
     SubtitleEntry.tsx     → Single entry row: startTime, endTime, text inputs, delete button
@@ -76,6 +82,7 @@ AppState {
   selectedLanguage: Language
   currentProjectId: string | null
   savedProjects: ProjectSummary[]      // {id, name, updatedAt}
+  locale: 'en' | 'pt' | 'es'           // UI language (auto-detected from browser, persisted in localStorage)
 }
 ```
 ### Actions
@@ -88,6 +95,7 @@ AppState {
 - `loadProject(id)` → loads from IndexedDB, clones to originalSubtitles for diff
 - `deleteProject(id)` → removes from IndexedDB, clears state if current
 - `refreshProjects()` → reloads project list
+- `setLocale(locale)` → sets UI locale
 - `useAIConfig()` → derived selector hook for aiConfig + setAIConfig
 
 ### Auto-save Mechanism (Layout.tsx:12-19)
@@ -184,6 +192,7 @@ App → Layout
   │   ├── Toolbar (Import/Export SRT, Add Entry, Show Diff)
   │   └── AIPanel (collapsed: settings btn + lang selector + translate btn)
   │       └── (expanded: provider config form with presets)
+  └── locale selector (EN/PT/ES dropdown in header)
   └── main
       ├── SubtitleEditor (when !showDiff)
       │   └── SubtitleEntryRow × N
@@ -192,10 +201,32 @@ App → Layout
           └── Right panel: Edited (synced scroll)
 ```
 
+## I18N (src/i18n/)
+### Architecture
+- **No external dependency** — custom lightweight implementation (~50 lines)
+- **Locale files:** `src/i18n/locales/{en,pt,es}.json` — flat key-value structure with dot notation (e.g. `ai.config.provider`)
+- **Detection:** `navigator.language` → maps to `'en' | 'pt' | 'es'` (pt prefix → pt, es prefix → es, default en)
+- **Persistence:** `localStorage` key `legenda-editor-locale`
+- **Reactivity:** Module-level `currentLocale` + listener pub/sub pattern; `useTranslation()` hook triggers re-render via `forceUpdate`
+- **Fallback:** Missing keys fall back to English, then to the key itself
+
+### API
+```typescript
+export function t(key: string): string          // Direct translation (reads currentLocale from module scope)
+export function useTranslation(): { t, locale, setLocale }  // Hook: re-renders on locale change
+export function getStoredLocale(): Locale        // For store initialization
+```
+
+### Translation Keys Pattern
+- `section.element.property` (e.g., `ai.config.apiUrl`, `toolbar.import`, `editor.empty.title`)
+- Language names use `language.en`, `language.pt`, `language.es`
+- Provider presets use `ai.preset.*`, provider buttons use `ai.provider.*`
+
 ## KEY IMPLEMENTATION NOTES
 - SRT parsing: splits by `\r?\n\r?\n`, expects format `index\ntimestamp --> timestamp\ntext`
 - Diff algorithm: naive line-by-line comparison (not LCS), sufficient for subtitle text changes
 - AI translation: sequential (not parallel), processes entries one-by-one
 - Project auto-save: 2s debounce on subtitle changes, only when project exists and has entries
 - Offline: entire app works offline except cloud AI providers (Ollama/LMStudio work locally)
+- i18n: custom lightweight system, no external deps, auto-detects browser language, persists in localStorage
 - crypto.randomUUID() used for entry IDs and project IDs

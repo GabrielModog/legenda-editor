@@ -2,6 +2,7 @@ import { Trash } from 'lucide-react';
 import { Button } from './ui/button';
 import { useStore } from '../store/subtitleStore';
 import type { SubtitleEntry as SubtitleType } from '../types';
+import { useTranslation } from '../i18n';
 
 interface Props {
   entry: SubtitleType;
@@ -9,6 +10,7 @@ interface Props {
 
 export function SubtitleEntryRow({ entry }: Props) {
   const { updateEntry, removeEntry } = useStore();
+  const { t } = useTranslation();
 
   return (
     <div className="group flex gap-3 border-b border-border-custom/50 p-3 hover:bg-surface-hover/50">
@@ -35,7 +37,7 @@ export function SubtitleEntryRow({ entry }: Props) {
         onChange={(e) => updateEntry(entry.id, 'text', e.target.value)}
         className="flex-1 resize-y rounded border border-border-custom bg-transparent px-2 py-1 text-sm focus:border-brand focus:outline-none"
         rows={2}
-        placeholder="Subtitle text..."
+        placeholder={t('editor.placeholder.text')}
       />
       <Button
         variant="ghost"

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { SubtitleEntry, AIConfig, Language } from '../types';
 import { saveProject, loadProject, deleteProject, listProjects, generateProjectName } from '../lib/db';
+import { getStoredLocale, setLocale as setLocaleI18n, type Locale } from '../i18n/core';
 
 interface ProjectSummary {
   id: string;
@@ -17,6 +18,7 @@ interface AppState {
   selectedLanguage: Language;
   currentProjectId: string | null;
   savedProjects: ProjectSummary[];
+  locale: Locale;
 
   setSubtitles: (subs: SubtitleEntry[]) => void;
   setOriginalSubtitles: (subs: SubtitleEntry[] | null) => void;
@@ -28,6 +30,7 @@ interface AppState {
   setShowDiff: (v: boolean) => void;
   setSelectedLanguage: (lang: Language) => void;
   resetOriginal: () => void;
+  setLocale: (locale: Locale) => void;
 
   newProject: () => void;
   saveProject: () => Promise<void>;
@@ -35,6 +38,7 @@ interface AppState {
   deleteProject: (id: string) => Promise<void>;
   refreshProjects: () => Promise<void>;
   setCurrentProjectId: (id: string | null) => void;
+  init: () => void;
 }
 
 const DEFAULT_AI: AIConfig = {
@@ -53,6 +57,7 @@ export const useStore = create<AppState>((set, get) => ({
   selectedLanguage: 'en',
   currentProjectId: null,
   savedProjects: [],
+  locale: getStoredLocale(),
 
   setSubtitles: (subs) => set({ subtitles: subs }),
   setOriginalSubtitles: (subs) => set({ originalSubtitles: subs }),
@@ -150,6 +155,16 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   setCurrentProjectId: (id: string | null) => set({ currentProjectId: id }),
+  setLocale: (locale) => { setLocaleI18n(locale); set({ locale }); },
+  init: () => {
+    const state = get();
+    if (state.currentProjectId) return;
+    const id = crypto.randomUUID();
+    const name = generateProjectName();
+    set({ currentProjectId: id });
+    saveProject({ id, name, subtitles: [], createdAt: Date.now(), updatedAt: Date.now() })
+      .then(() => get().refreshProjects());
+  },
 }));
 
 export const useAIConfig = () => {

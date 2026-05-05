@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { useStore } from '../store/subtitleStore';
 import { computeDiff } from '../lib/diff';
 import type { DiffLine } from '../lib/diff';
+import { useTranslation } from '../i18n';
 
 function DiffLines({ lines }: { lines: DiffLine[] }) {
   return (
@@ -31,6 +32,7 @@ export function DiffViewer() {
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const isScrolling = useRef(false);
+  const { t } = useTranslation();
 
   if (!original) return null;
 
@@ -51,7 +53,7 @@ export function DiffViewer() {
   return (
     <div className="flex flex-1 overflow-hidden">
       <div ref={leftRef} className="flex-1 overflow-y-auto border-r border-border-custom" onScroll={handleLeftScroll}>
-        <div className="sticky top-0 bg-surface px-3 py-2 font-semibold text-sm border-b border-border-custom">Original</div>
+        <div className="sticky top-0 bg-surface px-3 py-2 font-semibold text-sm border-b border-border-custom">{t('diff.original')}</div>
         {original.map((orig, i) => {
           const current = subtitles[i];
           const diff = computeDiff(orig.text, current?.text ?? '');
@@ -64,7 +66,7 @@ export function DiffViewer() {
         })}
       </div>
       <div ref={rightRef} className="flex-1 overflow-y-auto" onScroll={handleRightScroll}>
-        <div className="sticky top-0 bg-surface px-3 py-2 font-semibold text-sm border-b border-border-custom">Edited</div>
+        <div className="sticky top-0 bg-surface px-3 py-2 font-semibold text-sm border-b border-border-custom">{t('diff.edited')}</div>
         {original.map((orig, i) => {
           const current = subtitles[i];
           const diff = computeDiff(orig.text, current?.text ?? '');

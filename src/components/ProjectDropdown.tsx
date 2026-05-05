@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { Save, Plus, Trash2, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import { useStore } from '../store/subtitleStore';
+import { useTranslation } from '../i18n';
 
 export function ProjectDropdown() {
   const [open, setOpen] = useState(false);
   const { savedProjects, currentProjectId, newProject, saveProject, loadProject, deleteProject, refreshProjects } = useStore();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     refreshProjects();
@@ -34,7 +36,7 @@ export function ProjectDropdown() {
         className="flex items-center gap-1 text-sm text-gray-400 hover:text-white"
         onClick={() => setOpen(!open)}
       >
-        {currentProject ? currentProject.name : 'No Project'}
+        {currentProject ? currentProject.name : t('project.noProject')}
         <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </Button>
 
@@ -48,7 +50,7 @@ export function ProjectDropdown() {
                 className="flex-1 text-xs"
                 onClick={() => { newProject(); setOpen(false); }}
               >
-                <Plus size={12} /> New
+                <Plus size={12} /> {t('project.new')}
               </Button>
               <Button
                 variant="outline"
@@ -56,13 +58,13 @@ export function ProjectDropdown() {
                 className="flex-1 text-xs"
                 onClick={() => { saveProject(); setOpen(false); }}
               >
-                <Save size={12} /> Save
+                <Save size={12} /> {t('project.save')}
               </Button>
             </div>
           </div>
           <div className="max-h-64 overflow-y-auto">
             {savedProjects.length === 0 ? (
-              <div className="p-4 text-center text-xs text-gray-500">No saved projects</div>
+              <div className="p-4 text-center text-xs text-gray-500">{t('project.empty')}</div>
             ) : (
               savedProjects.map((project) => (
                 <div
