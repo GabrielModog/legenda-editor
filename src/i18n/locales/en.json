@@ -1,6 +1,7 @@
 {
   "app.title": "LegendaEditor",
   "app.subtitle": "SRT Editor with AI Translation",
+  "app.version": "Version",
   "toolbar.import": "Import SRT",
   "toolbar.export": "Export SRT",
   "toolbar.addEntry": "Add Entry",

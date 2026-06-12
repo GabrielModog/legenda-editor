@@ -31,7 +31,12 @@ export function Layout() {
     <div className="flex flex-col h-screen">
       <header className="shrink-0">
         <div className="flex items-center gap-3 px-4 py-2 border-b border-border-custom bg-surface">
-          <h1 className="text-lg font-bold text-brand">{t('app.title')}</h1>
+          <h1 className="text-lg font-bold text-brand">
+            {t('app.title')}
+            <span className="text-xs text-gray-500 ml-2" title={`${t('app.version')} ${import.meta.env.VITE_APP_VERSION}`}>
+              v{import.meta.env.VITE_APP_VERSION}
+            </span>
+          </h1>
           <ProjectDropdown />
           <select
             value={locale}
